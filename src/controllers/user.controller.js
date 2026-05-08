@@ -4,6 +4,7 @@ import { ApiError } from "../utils/apiError.js";
 import { asynHandler } from "../utils/asyncHandler.js";
 import { uploadOnClodinary } from "../utils/cloudinary.js";
 import { Response } from "../utils/response.js";
+import mongoose from "mongoose";
 
 const option={
       httpOnly:true,
@@ -89,7 +90,7 @@ console.log("FILES:", req.files);
 
 })
 
-const loginUser=asynHandler(async(req,res,next)=>{
+  const loginUser=asynHandler(async(req,res,next)=>{
  
 const { email, username, password}=req.body;
 
@@ -140,9 +141,9 @@ const { email, username, password}=req.body;
 
  
 
-})
+  })
 
- const logOut= asynHandler(async (req,res)=>{
+  const logOut= asynHandler(async (req,res)=>{
      await User.findByIdAndUpdate(
          req.user._id,
          {
@@ -246,7 +247,7 @@ const { email, username, password}=req.body;
   const updateAccountDetails= asynHandler(async(req,res)=>{
    const{fullname,email}=req.body
 
-   if(!(fullname || !email)){
+   if(!fullname || !email){
       throw new ApiError(401, "all filds are required")
    }
 
@@ -324,6 +325,125 @@ const { email, username, password}=req.body;
   .json(new Response(200,user,"coverImage upload successfully"))
   })
 
+ const userSubscription=asynHandler(async()=>{
+   const {username} = req.params.username
+
+   if(!username){
+      throw new ApiError(400, "usename not found in subscription")
+   }
+
+   const channel= await User.aggregate([
+      {
+         $match:{
+            username:username?.toLowerCase()
+         }
+      },
+      {
+         $lookup:{
+            from:"subscriptions",
+            localField:"_id",
+            foreignField:"channel",
+            as:"subscribers"
+         }
+      },
+      {
+         $lookup:{
+            from:"subscriptions",
+            localField:"_id",
+            foreignField:"subscriber",
+            as:"subscribedTo"
+         }
+      },
+      {
+         $addFields:{
+            subscriberCount:{
+               $size:"$subscribers"
+            },
+            subscribedCount:{
+                $size:"$subscribedTo"
+            },
+
+            isSubscribed:{
+               $cond:{
+                  if:{
+                     $in:[req.user?._id,"$subscribers.subscriber"]
+                  },
+                  then:true,
+                  else:false
+               }
+            }     
+         }
+      },
+      {
+         $project:{
+            username:1,
+            fullname:1,
+            email:1,
+            isSubscribed:1,
+            subscriberCount:1,
+            subscribedCount:1,
+            avatar:1,
+            coverImage:1
+         }
+      }
+   ])
+
+   if(!channel?.length){
+      throw new ApiError(200,"channel is not found")
+   }
+
+   return res
+   .status(200)
+   .json(
+      new Response(200,channel[0],"channel is fetched successfully")
+   )
+ })
+
+ const userWatchHistory=asynHandler(async(req,res)=>{
+   
+   const user = await User.aggregate([
+      {
+         $match:{
+            _id: new mongoose.Types.ObjectId(req.user?._id)
+         }
+      },
+      {
+         $lookup:{
+            from:"videos",
+            localField:"watchhistory",
+            foreignField:"_id",
+            as:"watchHistory",
+            pipeline : [
+               {
+                  $lookup:{
+                     from:"users",
+                     localField:"owner",
+                     foreignField:"_id",
+                     as:"owner",
+                     pipeline: [
+                        {
+                           $project:{
+                              username:1,
+                              fullname:1,
+                              avatar:1
+                           }
+                        }
+                     ]
+                  }
+               }
+            ]
+         }
+      }
+
+   ])
+
+   res
+   .status(200)
+   .json(
+      new Response(200, user[0].watchHistory, " watch history")
+   )
+ })
+
 
 export { registerUser,
          loginUser,
@@ -333,5 +453,7 @@ export { registerUser,
          getCurrentUser,
          updateAccountDetails,
          updateAvatar,
-         updateCoverImage
+         updateCoverImage,
+         userSubscription,
+         userWatchHistory
    }
