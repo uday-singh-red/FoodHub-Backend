@@ -60,7 +60,12 @@ const userSchema = new Schema  (
           isVerified:{
            type:Boolean,
             default:false
-             }
+             },
+
+             googleAuth:{
+                type:Boolean,
+                default:false
+                }
 
         
     

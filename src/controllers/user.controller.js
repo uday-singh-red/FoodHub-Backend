@@ -6,6 +6,8 @@ import { uploadOnClodinary } from "../utils/cloudinary.js";
 import { Response } from "../utils/response.js";
 import mongoose from "mongoose";
 import { sendEmail } from "../utils/sendmail.js";
+import crypto from "crypto"
+import { truncate } from "fs";
 
 const option={
       httpOnly:true,
@@ -88,7 +90,7 @@ const registerUser= asynHandler( async(req, res)=>{
 
             try {
                await sendEmail(email, otp);
-               
+
             } catch (error)
            {
                  await User.deleteOne({
@@ -131,6 +133,13 @@ const { email, username, password}=req.body;
    if(!user){
       throw new ApiError(401,"user is not found")
    }
+
+   if(user.googleAuth){
+   throw new ApiError(
+      401,
+      "Please login with Google"
+   )
+}
 
    if(!password){
       throw new ApiError(403, "password is required")
@@ -202,8 +211,9 @@ const { email, username, password}=req.body;
          email.split("@")[0] +
          Math.floor(Math.random() * 1000),
 
-         password:"googleLogin",
-         isVerified:true
+         password:crypto.randomBytes(32).toString("hex"),
+         isVerified:true,
+         googleAuth:true
 
       })
    }
