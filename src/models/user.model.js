@@ -53,6 +53,15 @@ const userSchema = new Schema  (
             type:String
         },
 
+        otp:String,
+
+        otpExpiry:Date,
+
+          isVerified:{
+           type:Boolean,
+            default:false
+             }
+
         
     
     },

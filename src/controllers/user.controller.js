@@ -5,10 +5,11 @@ import { asynHandler } from "../utils/asyncHandler.js";
 import { uploadOnClodinary } from "../utils/cloudinary.js";
 import { Response } from "../utils/response.js";
 import mongoose from "mongoose";
+import { sendEmail } from "../utils/sendmail.js";
 
 const option={
       httpOnly:true,
-      secure:false
+      secure:true
   }
 
 const generateRefreshAndAccessToken=async(userId)=>{
@@ -29,12 +30,18 @@ const generateRefreshAndAccessToken=async(userId)=>{
 }
 
 const registerUser= asynHandler( async(req, res)=>{
+
+   const otp =
+      Math.floor(
+      100000 + Math.random() * 900000
+      ).toString()
    
    const {fullname , email, username, password } = req.body|| {};
 
-  console.log("CONTENT-TYPE:", req.headers["content-type"]);
-console.log("BODY:", req.body);
-console.log("FILES:", req.files);
+ // console.log("CONTENT-TYPE:", req.headers["content-type"]);
+
+      // console.log("BODY:", req.body);
+      // console.log("FILES:", req.files);
 
      if ([username,email,fullname,password].some((field)=>field?.trim()===""))
          {
@@ -50,7 +57,7 @@ console.log("FILES:", req.files);
         if(existingUser){
             throw new ApiError(409,"user is already registerd")
         }
-        console.log(existingUser)
+      //   console.log(existingUser)
 
      const avatarLocalPath = req.files?.avatar?.[0]?.path;
      const coverImageLocalPath = req.files?.coverImage?.[0]?.path;
@@ -74,21 +81,40 @@ console.log("FILES:", req.files);
                 username: username.toLowerCase(),
                 email,
                 avatar: avatar.url,
-                coverimage: coverImage?.url || "" // this line check aur cover image 
+                coverimage: coverImage?.url || "", // this line check aur cover image
+                otp,
+                otpExpiry :  Date.now() + 10 * 60 * 1000
             })
 
-     const createUser=await User.findById(user._id).select("-password -referstoken")
+            try {
+               await sendEmail(email, otp);
+               
+            } catch (error)
+           {
+                 await User.deleteOne({
+                     _id:user._id
+                  })
+
+                  throw new ApiError(
+                     500,
+                     "Email not sent"
+                  )
+            }
+
+     const createUser=await User.findById(user._id).select("-password -referstoken -otp")
 
      if(!createUser){
         throw new ApiError(500, "something went wrong during registration")
      }
-    
-    return res.status(201).json(
-        new Response(200,createUser,"user registered successflly")
-     )
 
 
+   return res.status(201).json({
+   success:true,
+   message:"OTP sent to email",
+   user:createUser
 })
+})
+
 
   const loginUser=asynHandler(async(req,res,next)=>{
  
@@ -113,6 +139,13 @@ const { email, username, password}=req.body;
 
    const isPasswordValid= await user.isPasswordCorrect(password)
 
+   if(!user.isVerified){
+   throw new ApiError(
+      401,
+      "Please verify your email first"
+   )
+}
+
    if(!isPasswordValid){
       throw new ApiError(401,"your password and email is not match")
    }
@@ -131,9 +164,7 @@ const { email, username, password}=req.body;
    new Response(
       200,
       {
-         user:loggedInUser,
-          accessToken,
-          refreshToken
+         user:loggedInUser
       },
       "user logedin successfully"
    )
@@ -143,6 +174,142 @@ const { email, username, password}=req.body;
 
   })
 
+  const googleLogin = asynHandler(async (req, res) => {
+
+   const {
+      fullname,
+      email,
+      avatar
+   } = req.body
+
+   console.log("google user a gaya")
+
+   if (!email) {
+      throw new ApiError(400, "Email is required")
+   }
+
+   // CHECK USER
+   let user = await User.findOne({ email })
+
+   // AGAR USER NAHI HAI
+   if (!user) {
+
+      user = await User.create({
+         fullname,
+         email,
+         avatar,
+         username:
+         email.split("@")[0] +
+         Math.floor(Math.random() * 1000),
+
+         password:"googleLogin",
+         isVerified:true
+
+      })
+   }
+   // TOKENS
+   const {refreshToken,accessToken}=await generateRefreshAndAccessToken(user._id)
+
+
+   await user.save({ validateBeforeSave:false })
+
+
+   // FINAL USER
+   const loggedInUser =await User.findById(user._id).select("-password -refreshToken")
+
+   return res
+   .status(200)
+   .cookie(
+      "accessToken",
+      accessToken,
+      option
+   ).cookie(
+      "refreshToken",
+      refreshToken,
+      option
+   )
+   .json(new Response(
+         200,
+         loggedInUser,
+         "Google login success"
+      )
+   )
+})
+
+const verifyOtp = asynHandler(
+async(req,res)=>{
+   const {email, otp} = req.body
+
+   if(!email || !otp){
+      throw new ApiError(
+         400,
+         "Email and OTP required"
+      )
+   }
+
+   const user =await User.findOne({email})
+
+   if(!user){
+      throw new ApiError(
+         404,
+         "User not found"
+      )
+   }
+
+   if(user.otp !== otp){
+      throw new ApiError(
+         400,
+         "Invalid OTP"
+      )
+   }
+
+   if(user.otpExpiry < Date.now()){
+      throw new ApiError(
+         400,
+         "OTP expired"
+      )
+   }
+
+   // VERIFIED
+   user.isVerified = true
+   user.otp = undefined
+   user.otpExpiry = undefined
+   await user.save()
+
+   // TOKENS
+   const {
+      accessToken,
+      refreshToken
+   } =
+   await generateRefreshAndAccessToken(
+      user._id
+   )
+
+   // LOGIN USER
+   const loggedInUser =
+   await User.findById(user._id)
+   .select("-password -refreshToken")
+
+   return res
+   .status(200)
+   .cookie(
+      "accessToken",
+      accessToken,
+      option
+   )
+   .cookie(
+      "refreshToken",
+      refreshToken,
+      option
+   )
+   .json({
+      success:true,
+      user:loggedInUser,
+      message:
+      "Email verified & logged in"
+   })
+})
+
   const logOut= asynHandler(async (req,res)=>{
      await User.findByIdAndUpdate(
          req.user._id,
@@ -151,11 +318,6 @@ const { email, username, password}=req.body;
          },
          {new:true}
       )
-
-       const option={
-      httpOnly:true,
-      secure:true
-  }
 
  return res
   .status(200)
@@ -259,7 +421,7 @@ const { email, username, password}=req.body;
             email
            } 
          },
-         {new:true}
+         {returnDocument:"after"}
   ).select("-password")
 
   return res
@@ -440,7 +602,7 @@ const { email, username, password}=req.body;
    res
    .status(200)
    .json(
-      new Response(200, user[0].watchHistory, " watch history")
+      new Response(200, user[0].watchhistory, " watch history")
    )
  })
 
@@ -455,5 +617,7 @@ export { registerUser,
          updateAvatar,
          updateCoverImage,
          userSubscription,
-         userWatchHistory
+         userWatchHistory,
+         googleLogin,
+         verifyOtp
    }

@@ -1,5 +1,5 @@
 class Response{
-    constructor(statusCode, message= 'Success', data ){
+    constructor(statusCode, data, message= 'Success' ){
         this.message=message;
         this.data=data;
         this.success=statusCode<400;
