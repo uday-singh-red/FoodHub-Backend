@@ -57,15 +57,21 @@ const userSchema = new Schema  (
 
         otpExpiry:Date,
 
-          isVerified:{
-           type:Boolean,
-            default:false
-             },
+        isVerified:{
+        type:Boolean,
+         default:false
+         },
 
-             googleAuth:{
-                type:Boolean,
-                default:false
-                }
+        googleAuth:{
+        type:Boolean,
+        default:false
+            },
+
+         role:{
+         type:String,
+         enum:["user","admin"],
+        default:"user"
+           }  
 
         
     

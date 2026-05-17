@@ -8,7 +8,6 @@ const router= Router();
 
 router.route("/register").post(
      (req, res, next) => {
-    console.log("➡️ request aayi");
     next();
   },
     upload.fields([
@@ -22,7 +21,6 @@ router.route("/register").post(
         }
     ]),
     (req, res, next) => {
-    console.log("➡️ multer ke baad");
     next();
   },
     registerUser

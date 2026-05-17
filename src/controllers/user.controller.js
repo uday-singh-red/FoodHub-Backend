@@ -225,7 +225,7 @@ const { email, username, password}=req.body;
 
 
    // FINAL USER
-   const loggedInUser =await User.findById(user._id).select("-password -refreshToken")
+   const loggedInUser =await User.findById(user._id).select("-password -refreshToken -otp")
 
    return res
    .status(200)
