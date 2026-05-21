@@ -9,7 +9,7 @@ import { uploadOnClodinary } from "../utils/cloudinary.js";
 
 const createProduct =asynHandler(async(req,res)=>{
 
-   const {name,description} = req.body;
+   const {name,description,protein,fat,quantity,amount} = req.body;
 
    if(!name || !description){
 
@@ -37,7 +37,13 @@ const createProduct =asynHandler(async(req,res)=>{
     name,
     description,
     image:productImage.url,
-    owner:req.user._id
+    owner:req.user._id,
+     info:{
+      protein,
+      fat,
+      quantity,
+      amount
+   }
    })
 
 
@@ -62,6 +68,28 @@ const getAllProducts =asynHandler(async(req,res)=>{
    })
 })
 
+const getSingleProduct =asynHandler(async(req,res)=>{
+
+   const product =await Product.findById(req.params.id)
+
+  
+
+   if(!product){
+
+      throw new ApiError(
+         404,
+         "Product not found"
+      )
+   }
 
 
-export { createProduct , getAllProducts }
+   return res.status(200)
+   .json({
+      success:true,
+      product
+   })
+})
+
+
+
+export { createProduct , getAllProducts ,getSingleProduct}

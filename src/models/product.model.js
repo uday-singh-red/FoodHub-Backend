@@ -28,6 +28,25 @@ new Schema(
          type:Schema.Types.ObjectId,
          ref:"User",
          required:true
+      },
+
+      info:{
+
+         protein:{
+            type:String
+         },
+
+         fat:{
+            type:String
+         },
+
+         quantity:{
+            type:String
+         },
+
+         amount:{
+            type:String
+         }
       }
 
    },
