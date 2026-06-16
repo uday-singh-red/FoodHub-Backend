@@ -30,6 +30,27 @@ new Schema(
          required:true
       },
 
+      price:{
+         type:Number,
+         required:true
+      },
+
+      category:{
+         type:String,
+         required:true
+      },
+
+      state:{
+         type:String,
+         enum:["visible","notVisible"],
+         default:"visible"
+      },
+
+      rating:{
+         type:Number,
+         default:4.5
+      },
+
       info:{
 
          protein:{
@@ -39,14 +60,12 @@ new Schema(
          fat:{
             type:String
          },
-
-         quantity:{
+         calories:{
             type:String
          },
-
-         amount:{
+         quantity :{
             type:String
-         }
+         },
       }
 
    },
