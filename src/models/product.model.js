@@ -2,79 +2,102 @@ import mongoose,{ Schema } from "mongoose"
 
 
 
-const productSchema =
-new Schema(
+const productSchema = new mongoose.Schema({
 
-   {
-
-      name:{
-         type:String,
-         required:true,
-         trim:true
-      },
-
-      description:{
-         type:String,
-         required:true,
-         trim:true
-      },
-
-      image:{
-         type:String,
-         required:true
-      },
-
-      owner:{
-         type:Schema.Types.ObjectId,
-         ref:"User",
-         required:true
-      },
-
-      price:{
-         type:Number,
-         required:true
-      },
-
-      category:{
-         type:String,
-         required:true
-      },
-
-      state:{
-         type:String,
-         enum:["visible","notVisible"],
-         default:"visible"
-      },
-
-      rating:{
-         type:Number,
-         default:4.5
-      },
-
-      info:{
-
-         protein:{
-            type:String
-         },
-
-         fat:{
-            type:String
-         },
-         calories:{
-            type:String
-         },
-         quantity :{
-            type:String
-         },
-      }
-
+   shop: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Shop",
+      required: true
    },
 
-   {
+   name: {
+      type: String,
+      required: true,
+      trim: true
+   },
 
-      timestamps:true
+   description: {
+      type: String
+   },
+
+   images: [
+      {
+         url: String,
+         publicId: String
+      }
+   ],
+
+   category: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Category"
+   },
+
+   price: {
+      type: Number,
+      required: true
+   },
+
+   discountedPrice: Number,
+
+   stock: {
+      type: Number,
+      default: 0
+   },
+
+   isAvailable: {
+      type: Boolean,
+      default: true
+   },
+
+   // Optional Tags
+   isVeg: Boolean,
+   isVegan: Boolean,
+   isSpicy: Boolean,
+   isFeatured: Boolean,
+   isBestSeller: Boolean,
+
+   // Optional
+   preparationTime: Number,
+
+   ingredients: [String],
+
+   allergens: [String],
+
+   nutrition: {
+      calories: Number,
+      protein: Number,
+      carbs: Number,
+      fat: Number,
+      fiber: Number,
+      sugar: Number,
+      sodium: Number
+   },
+
+   sizes: [
+      {
+         name: String,
+         price: Number
+      }
+   ],
+
+   addons: [
+      {
+         name: String,
+         price: Number
+      }
+   ],
+
+   averageRating: {
+      type: Number,
+      default: 0
+   },
+
+   totalReviews: {
+      type: Number,
+      default: 0
    }
-)
+
+}, { timestamps: true })
 
 
 
