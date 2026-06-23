@@ -4,67 +4,184 @@ import { ApiError } from "../utils/ApiError.js"
 
 import { asynHandler } from "../utils/asyncHandler.js"
 import { uploadOnClodinary } from "../utils/cloudinary.js";
+import { Shop } from "../models/shop.model.js";
 
 
 
-const createProduct =asynHandler(async(req,res)=>{
+const createProduct = asynHandler(async (req, res) => {
 
-   const {name,
-   description,
-   price,
-   category,
-   protein,
-   fat,
-   calories,
-   quantity} = req.body;
+   console.log("product")
 
-   if(!name || !description){
+   const {
+      name,
+      description,
+      category,
+      price,
+      discountedPrice,
+      stock,
+
+      isVeg,
+      isVegan,
+      isSpicy,
+      isFeatured,
+      isBestSeller,
+      ingredients,
+      allergens,
+      
+
+      preparationTime,
+
+      calories,
+      protein,
+      carbs,
+      fat,
+      fiber,
+      sugar,
+      sodium
+   } = req.body;
+
+   if (!name || !price) {
 
       throw new ApiError(
          400,
-         "All fields are required"
-      )
+         "Name and price are required"
+      );
    }
 
-   const imageLocalPath =req.file?.path
+   // USER KI SHOP NIKALO
 
-   if(!imageLocalPath){
+   let shopId;
+
+   // Shopkeeper
+   if(req.user.role === "shopkeeper"){
+
+      const shop = await Shop.findOne({
+         owner: req.user._id,
+         status: "approved"
+      });
+
+      if(!shop){
+         throw new ApiError(
+            400,
+            "Approved shop not found"
+         );
+      }
+
+      shopId = shop._id;
+   }
+
+   // Admin
+ else if(req.user.role === "admin"){
+
+   const adminShop =
+   await Shop.findOne({
+      owner:req.user._id
+   });
+
+   if(!adminShop){
+      throw new ApiError(
+         400,
+         "Admin shop not found"
+      );
+   }
+
+   shopId = adminShop._id;
+}
+
+   // IMAGE
+
+   const imageLocalPath =
+      req.file?.path;
+
+   if (!imageLocalPath) {
 
       throw new ApiError(
          400,
          "Product image required"
-      )
+      );
    }
 
-   const productImage= await uploadOnClodinary(imageLocalPath);
+   console.log("image")
 
+   const uploadedImage =
+      await uploadOnClodinary(
+         imageLocalPath
+      );
 
+   if (!uploadedImage) {
 
-   const product =await Product.create({
-    name,
-    description,
-    category,
-    price,
-    image:productImage.url,
-    owner:req.user._id,
-     info:{
-      protein,
-      fat,
-      calories,
-      quantity,
+      throw new ApiError(
+         500,
+         "Image upload failed"
+      );
    }
-   })
 
+   // CREATE PRODUCT
 
+      const productData = {
 
-   return res.status(201)
-   .json({
-      success:true,
+      name,
+      description,
+      category,
+      price,
+      discountedPrice,
+      stock,
+
+      images: [
+         {
+            url: uploadedImage.url
+         }
+      ],
+
+      isVeg,
+      isVegan,
+      isSpicy,
+      isFeatured,
+      isBestSeller,
+
+      ingredients:ingredients?
+      ingredients.split(",").
+      map(item=> item.trim())
+      : [],
+    
+
+      allergens:allergens?
+      allergens.split(",").
+      map(item=> item.trim())
+      : [],
+    
+
+      preparationTime,
+
+      nutrition:{
+         calories,
+         protein,
+         carbs,
+         fat
+      }
+   };
+
+     if(shopId){
+      productData.shop = shopId;
+   }
+
+   const product =
+   await Product.create(productData);
+
+   console.log("create")
+
+   return res.status(201).json({
+
+      success: true,
+
       message:
       "Product created successfully",
+
       product
-   })
-})
+
+   });
+
+});
 
 const getAllProducts =asynHandler(async(req,res)=>{
 

@@ -7,8 +7,9 @@ const productSchema = new mongoose.Schema({
    shop: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Shop",
-      required: true
+      required:true
    },
+
 
    name: {
       type: String,
@@ -28,8 +29,8 @@ const productSchema = new mongoose.Schema({
    ],
 
    category: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Category"
+      type:String,
+      required:true
    },
 
    price: {
