@@ -83,7 +83,8 @@ const createShop = asynHandler(async (req, res) => {
       status: "pending",
    });
 
-   return res.status(201).json({
+   return res.status(201).
+   json({
       success: true,
       message:
          "Shop created successfully. Waiting for approval.",

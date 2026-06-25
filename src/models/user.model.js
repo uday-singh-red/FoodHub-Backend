@@ -10,7 +10,6 @@ const userSchema = new Schema  (
             type: String,
             required: true,
             lowercase:true,
-            index:true,
             trim:true,
             unique:true
         },
@@ -20,6 +19,7 @@ const userSchema = new Schema  (
             required: true,
             lowercase:true,
             trim:true,
+            unique:true,
         },
         
          fullname:{
@@ -46,7 +46,8 @@ const userSchema = new Schema  (
 
         password:{
             type:String,
-           required: [true, 'password is mandatory']
+           required: [true, 'password is mandatory'],
+           select:false
         },
 
         refreshToken:{

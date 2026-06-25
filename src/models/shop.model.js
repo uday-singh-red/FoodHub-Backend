@@ -21,6 +21,7 @@ const shopSchema = new Schema(
     email: {
       type: String,
       default: "",
+      required:true
     },
 
     address: {
@@ -31,6 +32,7 @@ const shopSchema = new Schema(
     shopLogo: {
       type: String,
       default: "",
+      required:true
     },
 
     shopBanner: {

@@ -222,16 +222,6 @@ const updateProduct = async (req, res) => {
 
       const { id } = req.params;
 
-      const {
-         name,
-         description,
-         price,
-         protein,
-         fat,
-         quantity,
-         amount
-      } = req.body;
-
       const product =
       await Product.findById(id);
 
@@ -243,40 +233,117 @@ const updateProduct = async (req, res) => {
          });
       }
 
+      const {
+         name,
+         description,
+         category,
+         price,
+         discountedPrice,
+         stock,
+
+         isVeg,
+         isVegan,
+         isSpicy,
+         isFeatured,
+         isBestSeller,
+
+         ingredients,
+         allergens,
+
+         preparationTime,
+
+         calories,
+         protein,
+         carbs,
+         fat
+      } = req.body;
+
+      // IMAGE UPDATE
+
       if(req.file){
 
-         const imageUrl =
-         await uploadOnCloudinary(
+         const uploadedImage =
+         await uploadOnClodinary(
             req.file.path
          );
 
-         product.image =
-         imageUrl.url;
+         if(uploadedImage){
+
+            product.images = [
+               {
+                  url: uploadedImage.url,
+                  publicId:
+                  uploadedImage.public_id
+               }
+            ];
+         }
       }
 
       product.name =
-         name || product.name;
+      name || product.name;
 
       product.description =
-         description || product.description;
+      description || product.description;
+
+      product.category =
+      category || product.category;
 
       product.price =
-         price || product.price;
+      price || product.price;
 
-      product.info = {
+      product.discountedPrice =
+      discountedPrice || product.discountedPrice;
+
+      product.stock =
+      stock || product.stock;
+
+      product.isVeg =
+      isVeg === "true";
+
+      product.isVegan =
+      isVegan === "true";
+
+      product.isSpicy =
+      isSpicy === "true";
+
+      product.isFeatured =
+      isFeatured === "true";
+
+      product.isBestSeller =
+      isBestSeller === "true";
+
+      product.preparationTime =
+      preparationTime || null;
+
+      product.ingredients =
+      ingredients
+      ? ingredients
+         .split(",")
+         .map(item => item.trim())
+         .filter(Boolean)
+      : [];
+
+      product.allergens =
+      allergens
+      ? allergens
+         .split(",")
+         .map(item => item.trim())
+         .filter(Boolean)
+      : [];
+
+      product.nutrition = {
+
+         calories:
+         calories || null,
 
          protein:
-         protein || product.info.protein,
+         protein || null,
+
+         carbs:
+         carbs || null,
 
          fat:
-         fat || product.info.fat,
-
-         quantity:
-         quantity || product.info.quantity,
-
-         amount:
-         amount || product.info.amount
-
+         fat || null
       };
 
       await product.save();
@@ -289,26 +356,22 @@ const updateProduct = async (req, res) => {
          "Product updated successfully",
 
          product
-
       });
 
    }
 
-   catch (error) {
+   catch(error){
 
       console.log(error);
 
       return res.status(500).json({
 
-         success: false,
+         success:false,
 
          message:
          "Server error"
-
       });
-
    }
-
 };
 
 
