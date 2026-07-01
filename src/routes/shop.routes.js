@@ -6,7 +6,9 @@ import {
    getPendingShops,
    approveShop,
    rejectShop,
-   createShop
+   createShop,
+   getAllShops,
+   getSingleShop
 }
 from "../controllers/shop.controller.js";
 
@@ -53,5 +55,17 @@ router.delete(
    verifyAdmin,
    rejectShop
 );
+
+router.get(
+   "/all-shops",
+   getAllShops
+);
+
+router.get(
+   "/:id",
+   getSingleShop
+);
+
+
 
 export default router;

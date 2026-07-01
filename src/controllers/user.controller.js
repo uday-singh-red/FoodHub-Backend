@@ -128,7 +128,9 @@ const { email, username, password}=req.body;
 
    const user = await User.findOne({
       $or:[{email},{username}]
-   })
+   }).select("+password")
+
+
 
    if(!user){
       throw new ApiError(401,"user is not found")
@@ -144,6 +146,13 @@ const { email, username, password}=req.body;
    if(!password){
       throw new ApiError(403, "password is required")
    }
+
+   if (!user.password) {
+   throw new ApiError(
+      500,
+      "Password hash not found"
+   );
+}
 
 
    const isPasswordValid= await user.isPasswordCorrect(password)

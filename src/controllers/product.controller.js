@@ -40,6 +40,8 @@ const createProduct = asynHandler(async (req, res) => {
       sodium
    } = req.body;
 
+   console.log("hello")
+
    if (!name || !price) {
 
       throw new ApiError(

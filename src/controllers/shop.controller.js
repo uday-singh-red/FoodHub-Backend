@@ -166,10 +166,52 @@ const rejectShop = async (req, res) => {
    });
 };
 
+const getAllShops = asynHandler(async (req, res) => {
+
+const shops = await Shop.find({
+   status: "approved",
+   isActive: true
+})
+.populate("owner", "fullname avatar role");
+
+   return res.status(200).json({
+      success: true,
+      shops
+   });
+
+});
+
+const getSingleShop = asynHandler(async (req, res) => {
+
+   const { id } = req.params;
+
+const shop = await Shop.findOne({
+   _id: req.params.id,
+   status: "approved",
+   isActive: true
+})
+.populate("owner", "fullname avatar email role");
+
+   if (!shop) {
+      throw new ApiError(
+         404,
+         "Shop not found"
+      );
+   }
+
+   return res.status(200).json({
+      success: true,
+      shop
+   });
+
+});
+
 export {
    createShop,
    approveShop,
    getPendingShops,
-   rejectShop
+   rejectShop,
+   getAllShops,
+   getSingleShop
 };
 
